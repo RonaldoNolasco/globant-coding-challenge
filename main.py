@@ -1,33 +1,27 @@
+# Importando clases
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
-class HeroBase(SQLModel):
+# Modelos de base de datos
+class Department(SQLModel, table=True):
+    id: int = Field(primary_key=True)
+    department: str = Field(index=True)
+
+class Job(SQLModel, table=True):
+    id: int = Field(primary_key=True)
+    job: str = Field(index=True)
+
+class Employee(SQLModel, table=True):
+    id: int = Field(primary_key=True)
     name: str = Field(index=True)
-    age: int | None = Field(default=None, index=True)
+    datetime: str = Field(index=True)
+    department_id: int = Field(foreign_key="department.id")
+    job_id: int = Field(foreign_key="job.id")
 
-
-class Hero(HeroBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    secret_name: str
-
-
-class HeroPublic(HeroBase):
-    id: int
-
-
-class HeroCreate(HeroBase):
-    secret_name: str
-
-
-class HeroUpdate(HeroBase):
-    name: str | None = None
-    age: int | None = None
-    secret_name: str | None = None
-
-
+# Configuracion de BD
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
@@ -52,7 +46,7 @@ app = FastAPI()
 def on_startup():
     create_db_and_tables()
 
-
+""" 
 @app.post("/heroes/", response_model=HeroPublic)
 def create_hero(hero: HeroCreate, session: SessionDep):
     db_hero = Hero.model_validate(hero)
@@ -100,4 +94,4 @@ def delete_hero(hero_id: int, session: SessionDep):
         raise HTTPException(status_code=404, detail="Hero not found")
     session.delete(hero)
     session.commit()
-    return {"ok": True}
+    return {"ok": True} """
