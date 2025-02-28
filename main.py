@@ -1,7 +1,7 @@
 # Importando clases
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, Query, File, UploadFile
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from sqlmodel import SQLModel, Field, Session, create_engine, select, func
 import pandas as pd
 import io
 import os
@@ -91,7 +91,34 @@ async def upload_csv(file: UploadFile = File(...), session: Session = Depends(ge
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
+@app.get("/employees_per_quarter/")
+def employees_per_quarter(session: Session = Depends(get_session)):
+    query = (
+        select(Department.department, Job.job,
+               func.substr(Employee.datetime, 6, 2).label("month"),
+               func.count().label("num_employees"))
+        .join(Employee, Employee.department_id == Department.id, isouter=True)
+        .join(Job, Employee.job_id == Job.id, isouter=True)
+        .where(Employee.datetime.like("2021-%"))
+        .group_by(Department.department, Job.job, "month")
+        .order_by(Department.department, Job.job)
+    )
+    
+    results = session.exec(query).all()
+    
+    output = {}
+    for department, job, month, num_employees in results:
+        quarter = (int(month) - 1) // 3 + 1
+        key = (department, job)
+        if key not in output:
+            output[key] = {"Q1": 0, "Q2": 0, "Q3": 0, "Q4": 0}
+        output[key][f"Q{quarter}"] += num_employees
+    
+    response = []
+    for (department, job), quarters in output.items():
+        response.append({"department": department, "job": job, **quarters})
+    
+    return response
 
 
 """ @app.post("/files/")
