@@ -3,9 +3,10 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import Field, Session, SQLModel, create_engine, select
+import os
 
 
-# Modelos de base de datos
+# Tablas de base de datos
 class Department(SQLModel, table=True):
     id: int = Field(primary_key=True)
     department: str = Field(index=True)
@@ -28,20 +29,24 @@ sqlite_url = f"sqlite:///{sqlite_file_name}"
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)
 
+# Eliminar la base de datos si existe
+if os.path.exists(sqlite_file_name):
+    os.remove(sqlite_file_name)
 
+# Se crean las tablas de la BD
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
-
+# Se genera la sesión de la aplicación
 def get_session():
     with Session(engine) as session:
         yield session
 
-
+# Se inicializa la aplicación
 SessionDep = Annotated[Session, Depends(get_session)]
 app = FastAPI()
 
-
+# Se define una accion al iniciar la aplicacion
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
