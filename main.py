@@ -1,8 +1,9 @@
 # Importando clases
 from typing import Annotated
-
 from fastapi import Depends, FastAPI, HTTPException, Query, File, UploadFile
 from sqlmodel import Field, Session, SQLModel, create_engine, select
+import pandas as pd
+import io
 import os
 
 
@@ -30,9 +31,9 @@ connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)
 
 # Eliminar la base de datos si existe
-if os.path.exists(sqlite_file_name):
+""" if os.path.exists(sqlite_file_name):
     os.remove(sqlite_file_name)
-
+ """
 # Se crean las tablas de la BD
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
@@ -51,7 +52,47 @@ app = FastAPI()
 def on_startup():
     create_db_and_tables()
 
-@app.post("/files/")
+@app.post("/upload_csv/")
+async def upload_csv(file: UploadFile = File(...), session: Session = Depends(get_session)):
+    try:
+        contents = await file.read()
+        filename = file.filename.lower()
+        df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, dtype=str)
+        
+        # Determinar el tipo de archivo subido y aplicar el esquema correcto con casteo de datos
+        if "departments" in filename:
+            df.columns = ["id", "department"]
+            df["id"] = df["id"].astype(int)
+            departments = [Department(id=int(row["id"]), department=str(row["department"])) for _, row in df.iterrows()]
+            session.add_all(departments)
+        
+        elif "jobs" in filename:
+            df.columns = ["id", "job"]
+            df["id"] = df["id"].astype(int)
+            jobs = [Job(id=int(row["id"]), job=str(row["job"])) for _, row in df.iterrows()]
+            session.add_all(jobs)
+        
+        elif "hired_employees" in filename:
+            df.columns = ["id", "name", "datetime", "department_id", "job_id"]
+            df["id"] = df["id"].astype(int)
+            df["department_id"] = df["department_id"].astype(int)
+            df["job_id"] = df["job_id"].astype(int)
+            employees = [Employee(id=int(row["id"]), name=str(row["name"]), datetime=str(row["datetime"]), 
+                                  department_id=int(row["department_id"]), job_id=int(row["job_id"])) 
+                         for _, row in df.iterrows()]
+            session.add_all(employees)
+        
+        else:
+            raise HTTPException(status_code=400, detail="Unrecognized file format")
+        
+        session.commit()
+        return {"message": "Data uploaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+""" @app.post("/files/")
 async def create_files(
     files: Annotated[list[bytes], File(description="Multiple files as bytes")],
 ):
@@ -64,8 +105,7 @@ async def create_upload_files(
         list[UploadFile], File(description="Multiple files as UploadFile")
     ],
 ):
-    return {"filenames": [file.filename for file in files]}
-
+    return {"filenames": [file.filename for file in files]} """
 """ 
 @app.post("/heroes/", response_model=HeroPublic)
 def create_hero(hero: HeroCreate, session: SessionDep):
