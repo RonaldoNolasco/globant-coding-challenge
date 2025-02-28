@@ -20,8 +20,8 @@ class Employee(SQLModel, table=True):
     id: int = Field(primary_key=True)
     name: str = Field(index=True)
     datetime: str = Field(index=True)
-    department_id: int = Field(foreign_key="department.id")
-    job_id: int = Field(foreign_key="job.id")
+    department_id: int = Field(foreign_key="department.id", nullable=True)
+    job_id: int = Field(foreign_key="job.id", nullable=True)
 
 # Configuracion de BD
 sqlite_file_name = "database.db"
@@ -75,10 +75,11 @@ async def upload_csv(file: UploadFile = File(...), session: Session = Depends(ge
         elif "hired_employees" in filename:
             df.columns = ["id", "name", "datetime", "department_id", "job_id"]
             df["id"] = df["id"].astype(int)
-            df["department_id"] = df["department_id"].astype(int)
-            df["job_id"] = df["job_id"].astype(int)
-            employees = [Employee(id=int(row["id"]), name=str(row["name"]), datetime=str(row["datetime"]), 
-                                  department_id=int(row["department_id"]), job_id=int(row["job_id"])) 
+            df["department_id"] = pd.to_numeric(df["department_id"], errors="coerce")
+            df["job_id"] = pd.to_numeric(df["job_id"], errors="coerce")
+            employees = [Employee(id=int(row["id"]), name=str(row["name"]), datetime=str(row["datetime"]),
+                                  department_id=int(row["department_id"]) if not pd.isna(row["department_id"]) else None,
+                                  job_id=int(row["job_id"]) if not pd.isna(row["job_id"]) else None)
                          for _, row in df.iterrows()]
             session.add_all(employees)
         
@@ -89,6 +90,7 @@ async def upload_csv(file: UploadFile = File(...), session: Session = Depends(ge
         return {"message": "Data uploaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
