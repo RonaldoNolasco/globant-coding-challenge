@@ -1,7 +1,7 @@
 # Importando clases
 from typing import Annotated
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
-from sqlmodel import SQLModel, Field, Session, create_engine, select, func
+from sqlmodel import SQLModel, Field, Session, create_engine, select, func, case
 import pandas as pd
 import io
 import os
@@ -94,31 +94,33 @@ async def upload_csv(file: UploadFile = File(...), session: Session = Depends(ge
 @app.get("/employees_per_quarter/")
 def employees_per_quarter(session: Session = Depends(get_session)):
     query = (
-        select(Department.department, Job.job,
-               func.substr(Employee.datetime, 6, 2).label("month"),
-               func.count().label("num_employees"))
+        select(
+            Department.department, Job.job,
+            func.sum(case((func.substr(Employee.datetime, 6, 2).in_(["01", "02", "03"]), 1), else_=0)).label("Q1"),
+            func.sum(case((func.substr(Employee.datetime, 6, 2).in_(["04", "05", "06"]), 1), else_=0)).label("Q2"),
+            func.sum(case((func.substr(Employee.datetime, 6, 2).in_(["07", "08", "09"]), 1), else_=0)).label("Q3"),
+            func.sum(case((func.substr(Employee.datetime, 6, 2).in_(["10", "11", "12"]), 1), else_=0)).label("Q4")
+        )
         .join(Employee, Employee.department_id == Department.id, isouter=True)
         .join(Job, Employee.job_id == Job.id, isouter=True)
         .where(Employee.datetime.like("2021-%"))
-        .group_by(Department.department, Job.job, "month")
+        .group_by(Department.department, Job.job)
         .order_by(Department.department, Job.job)
     )
     
     results = session.exec(query).all()
     
-    output = {}
-    for department, job, month, num_employees in results:
-        quarter = (int(month) - 1) // 3 + 1
-        key = (department, job)
-        if key not in output:
-            output[key] = {"Q1": 0, "Q2": 0, "Q3": 0, "Q4": 0}
-        output[key][f"Q{quarter}"] += num_employees
-    
-    response = []
-    for (department, job), quarters in output.items():
-        response.append({"department": department, "job": job, **quarters})
+    response = [{
+        "department": department,
+        "job": job,
+        "Q1": q1,
+        "Q2": q2,
+        "Q3": q3,
+        "Q4": q4
+    } for department, job, q1, q2, q3, q4 in results]
     
     return response
+
 
 
 """ @app.post("/files/")
