@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from test.test_setup import test_session, setup_test_db
+from test.config import test_session, setup_test_db
 from app.main import app
 import io
 

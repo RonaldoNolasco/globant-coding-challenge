@@ -1,5 +1,5 @@
 from app.models import Department, Job, Employee
-from test.test_setup import test_session, setup_test_db
+from test.config import test_session, setup_test_db
 from sqlmodel import Session, select
 
 # Department
