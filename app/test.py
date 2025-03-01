@@ -1,6 +1,13 @@
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 import io
+
+from app.database import init_db
+
+@pytest.fixture(autouse=True)
+def setup_test_db():
+    init_db()  # Reinicia la BD en memoria antes de cada test
 
 client = TestClient(app)
 
