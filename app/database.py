@@ -8,9 +8,9 @@ load_dotenv()
 TESTING = os.getenv("TESTING", "false").lower() == "true"
 
 if TESTING:
-    DATABASE_URL = "sqlite:///data/test_database.db"
+    DATABASE_URL = "sqlite:///db/test_database.db"
 else:
-    DATABASE_URL = "sqlite:///data/database.db"
+    DATABASE_URL = "sqlite:///db/database.db"
 
 engine = create_engine(DATABASE_URL, echo=True)
 
