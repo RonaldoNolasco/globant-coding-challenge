@@ -121,6 +121,37 @@ def employees_per_quarter(session: Session = Depends(get_session)):
     
     return response
 
+@app.get("/departments_above_mean/")
+def departments_above_mean(session: Session = Depends(get_session)):
+    # Subconsulta para calcular el total de empleados por departamento en 2021
+    dept_hiring_counts = (
+        select(Employee.department_id, func.count(Employee.id).label("hired_count"))
+        .where(Employee.datetime.like("2021-%"))
+        .group_by(Employee.department_id)
+        .cte("dept_hiring_counts")  # CTE para evitar problemas de agregación
+    )
+
+    # Calcular el promedio de contrataciones en 2021
+    avg_hiring = select(func.avg(dept_hiring_counts.c.hired_count)).scalar_subquery()
+
+    # Consulta principal: obtener departamentos con contrataciones por encima del promedio
+    query = (
+        select(Department.id, Department.department, dept_hiring_counts.c.hired_count)
+        .join(dept_hiring_counts, Department.id == dept_hiring_counts.c.department_id)
+        .where(dept_hiring_counts.c.hired_count > avg_hiring)
+        .order_by(dept_hiring_counts.c.hired_count.desc())
+    )
+
+    results = session.exec(query).all()
+
+    # Construcción de respuesta en JSON
+    response = [{
+        "id": id,
+        "department": department,
+        "hired_count": hired_count
+    } for id, department, hired_count in results]
+
+    return response
 
 
 """ @app.post("/files/")
