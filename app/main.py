@@ -1,56 +1,15 @@
-# Importando clases
-from typing import Annotated
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
-from sqlmodel import SQLModel, Field, Session, create_engine, select, func, case
+from sqlmodel import Session, select, func, case
 import pandas as pd
 import io
-import os
+from database import create_db_and_tables, get_session, engine
+from models import Department, Job, Employee
 
+# Inicializar la base de datos
+create_db_and_tables()
 
-# Tablas de base de datos
-class Department(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    department: str = Field(index=True)
-
-class Job(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    job: str = Field(index=True)
-
-class Employee(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    name: str = Field(index=True)
-    datetime: str = Field(index=True)
-    department_id: int = Field(foreign_key="department.id", nullable=True)
-    job_id: int = Field(foreign_key="job.id", nullable=True)
-
-# Configuracion de BD
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
-
-# Eliminar la base de datos si existe
-""" if os.path.exists(sqlite_file_name):
-    os.remove(sqlite_file_name)
- """
-# Se crean las tablas de la BD
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
-# Se genera la sesión de la aplicación
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-# Se inicializa la aplicación
-SessionDep = Annotated[Session, Depends(get_session)]
+# Crear la aplicación FastAPI
 app = FastAPI()
-
-# Se define una accion al iniciar la aplicacion
-@app.on_event("startup")
-def on_startup():
-    create_db_and_tables()
 
 @app.post("/upload_csv/")
 async def upload_csv(file: UploadFile = File(...), session: Session = Depends(get_session)):
@@ -59,7 +18,7 @@ async def upload_csv(file: UploadFile = File(...), session: Session = Depends(ge
         filename = file.filename.lower()
         df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, dtype=str)
         
-        # Determinar el tipo de archivo subido y aplicar el esquema correcto con casteo de datos
+        # Determinar el tipo de archivo y aplicar esquema con casteo de datos
         if "departments" in filename:
             df.columns = ["id", "department"]
             df["id"] = df["id"].astype(int)
@@ -123,32 +82,23 @@ def employees_per_quarter(session: Session = Depends(get_session)):
 
 @app.get("/departments_above_mean/")
 def departments_above_mean(session: Session = Depends(get_session)):
-    # Subconsulta para calcular el total de empleados por departamento en 2021
-    dept_hiring_counts = (
-        select(Employee.department_id, func.count(Employee.id).label("hired_count"))
-        .where(Employee.datetime.like("2021-%"))
-        .group_by(Employee.department_id)
-        .cte("dept_hiring_counts")  # CTE para evitar problemas de agregación
-    )
-
-    # Calcular el promedio de contrataciones en 2021
-    avg_hiring = select(func.avg(dept_hiring_counts.c.hired_count)).scalar_subquery()
-
-    # Consulta principal: obtener departamentos con contrataciones por encima del promedio
+    subquery = select(func.avg(func.count(Employee.id))).where(Employee.datetime.like("2021-%")).group_by(Employee.department_id).scalar_subquery()
+    
     query = (
-        select(Department.id, Department.department, dept_hiring_counts.c.hired_count)
-        .join(dept_hiring_counts, Department.id == dept_hiring_counts.c.department_id)
-        .where(dept_hiring_counts.c.hired_count > avg_hiring)
-        .order_by(dept_hiring_counts.c.hired_count.desc())
+        select(Department.id, Department.department, func.count(Employee.id).label("hired_count"))
+        .join(Employee, Employee.department_id == Department.id, isouter=True)
+        .where(Employee.datetime.like("2021-%"))
+        .group_by(Department.id, Department.department)
+        .having(func.count(Employee.id) > subquery)
+        .order_by(func.count(Employee.id).desc())
     )
-
+    
     results = session.exec(query).all()
-
-    # Construcción de respuesta en JSON
+    
     response = [{
         "id": id,
         "department": department,
         "hired_count": hired_count
     } for id, department, hired_count in results]
-
+    
     return response
