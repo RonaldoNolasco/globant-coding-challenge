@@ -3,6 +3,9 @@ import io
 from fastapi import HTTPException
 from sqlmodel import select, func, case
 from app.models import Department, Job, Employee
+import logging
+logger = logging.getLogger('uvicorn.error')
+#logger.info('A')
 
 def process_csv(file, session):
     try:
@@ -19,7 +22,7 @@ def process_csv(file, session):
         if "departments" in filename:
             df.columns = ["id", "department"]
             df["id"] = df["id"].astype(int)
-            existing_departments = {d.id: d.department for d in session.exec(select(Department)).all()}
+            existing_departments = {d[0].id: d[0] for d in session.exec(select(Department)).all()}
             incoming_ids = set(df["id"])
             existing_ids = set(existing_departments.keys())
             
@@ -38,7 +41,7 @@ def process_csv(file, session):
         elif "jobs" in filename:
             df.columns = ["id", "job"]
             df["id"] = df["id"].astype(int)
-            existing_jobs = {j.id: j for j in session.exec(select(Job)).all()}
+            existing_jobs = {j[0].id: j[0] for j in session.exec(select(Job)).all()}
             incoming_ids = set(df["id"])
             existing_ids = set(existing_jobs.keys())
             
@@ -59,7 +62,7 @@ def process_csv(file, session):
             df["id"] = df["id"].astype(int)
             df["department_id"] = pd.to_numeric(df["department_id"], errors="coerce")
             df["job_id"] = pd.to_numeric(df["job_id"], errors="coerce")
-            existing_employees = {e.id: e for e in session.exec(select(Employee)).all()}
+            existing_employees = {e[0].id: e[0] for e in session.exec(select(Employee)).all()}
             incoming_ids = set(df["id"])
             existing_ids = set(existing_employees.keys())
             
