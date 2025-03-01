@@ -6,14 +6,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Obtener el nombre del archivo de la BD desde .env
-DATABASE_FILE = os.getenv("DATABASE_FILE", "data/database.db")
-DATABASE_URL = f"sqlite:///{DATABASE_FILE}"  # Puedes cambiar a otro motor de BD si es necesario
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/database.db")
 
 # Crear el motor de la base de datos
 engine = create_engine(DATABASE_URL, echo=True)
 
 # Función para inicializar la base de datos
 def init_db():
+    SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
 # Obtener sesión
