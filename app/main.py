@@ -17,4 +17,4 @@ async def lifespan(app: FastAPI):
     print("🛑 La aplicación se está cerrando")
 
 # Incluir las rutas de la API
-app.include_router(router, prefix="/api")
+app.include_router(router)
