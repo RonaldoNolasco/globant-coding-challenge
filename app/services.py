@@ -9,15 +9,30 @@ logger = logging.getLogger('uvicorn.error')
 
 def process_csv(file, session):
     try:
+        # Lee el contenido del archivo
         contents = file.file.read()
-        filename = file.filename.lower()
-        df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, dtype=str)
+
+        # Si el archivo está vacío, creamos un DataFrame vacío con las mismas columnas
+        if not contents:
+            filename = file.filename.lower()
+
+            if "departments" in filename:
+                df = pd.DataFrame(columns=["id", "department"])
+            elif "jobs" in filename:
+                df = pd.DataFrame(columns=["id", "job"])
+            elif "hired_employees" in filename:
+                df = pd.DataFrame(columns=["id", "name", "datetime", "department_id", "job_id"])
+            else:
+                raise HTTPException(status_code=400, detail="Unrecognized file format")
+
+        else:
+            # Si no está vacío, procesamos el archivo como de costumbre
+            filename = file.filename.lower()
+            df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, dtype=str)
+
         inserted = 0
         updated = 0
         deleted = 0
-
-        # Asegurarse de que la sesión esté limpia
-        session.expunge_all()
 
         if "departments" in filename:
             df.columns = ["id", "department"]
