@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field
+from typing import Optional
 
 class Department(SQLModel, table=True):
     id: int = Field(primary_key=True)
@@ -10,7 +11,7 @@ class Job(SQLModel, table=True):
 
 class Employee(SQLModel, table=True):
     id: int = Field(primary_key=True)
-    name: str = Field(index=True)
-    datetime: str = Field(index=True)
-    department_id: int = Field(foreign_key="department.id", nullable=True)
-    job_id: int = Field(foreign_key="job.id", nullable=True)
+    name: str = Field(index=True, nullable=True)
+    datetime: str = Field(index=True, nullable=True)
+    department_id: Optional[int] = Field(foreign_key="department.id", nullable=True)
+    job_id: Optional[int] = Field(foreign_key="job.id", nullable=True)
