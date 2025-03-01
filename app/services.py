@@ -75,25 +75,35 @@ def employees_per_quarter(session):
         } for dept, job, q1, q2, q3, q4 in results
     ]
 
+from sqlalchemy.sql import select, func
+
 def departments_above_mean(session):
-    subquery = (
-        select(func.avg(func.count(Employee.id)))
+    # Subconsulta para obtener el número de empleados por departamento
+    subquery_counts = (
+        select(Employee.department_id, func.count(Employee.id).label("dept_count"))
         .where(Employee.datetime.like("2021-%"))
         .group_by(Employee.department_id)
+        .subquery()
+    )
+
+    # Subconsulta para obtener el promedio de empleados por departamento
+    subquery_avg = (
+        select(func.avg(subquery_counts.c.dept_count))
         .scalar_subquery()
     )
 
+    # Consulta principal para seleccionar departamentos con empleados por encima del promedio
     query = (
         select(Department.id, Department.department, func.count(Employee.id).label("hired_count"))
         .join(Employee, Employee.department_id == Department.id, isouter=True)
         .where(Employee.datetime.like("2021-%"))
         .group_by(Department.id, Department.department)
-        .having(func.count(Employee.id) > subquery)
+        .having(func.count(Employee.id) > subquery_avg)
         .order_by(func.count(Employee.id).desc())
     )
 
     results = session.exec(query).all()
-    
+
     return [
         {
             "id": id,
@@ -101,3 +111,4 @@ def departments_above_mean(session):
             "hired_count": hired_count
         } for id, department, hired_count in results
     ]
+
