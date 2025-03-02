@@ -7,7 +7,11 @@ logger = logging.getLogger('uvicorn.error')
 load_dotenv()
 
 # Si la variable TESTING está en "true", usar BD en memoria
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///db/database.db")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+# DESA: "sqlite:///db/database.db"
+# CERT: "sqlite:///db/test_database.db"
+# PROD: "postgresql://postgres:TQIZrLVrMCuTjEDVSbYmGsxvmdELdhEI@postgres.railway.internal:5432/railway"
 
 engine = create_engine(DATABASE_URL, echo=True)
 
