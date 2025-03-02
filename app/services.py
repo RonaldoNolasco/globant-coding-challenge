@@ -3,113 +3,46 @@ import io
 from fastapi import HTTPException
 from sqlmodel import select, func, case
 from app.models import Department, Job, Employee
+from app.utils import process_data
 import logging
 logger = logging.getLogger('uvicorn.error')
 #logger.info('A')
 
-def process_csv(file, session):
+def process_csv(file, session, file_type):
     try:
-        # Lee el contenido del archivo
         contents = file.file.read()
 
-        # Si el archivo está vacío, creamos un DataFrame vacío con las mismas columnas
         if not contents:
-            filename = file.filename.lower()
-
-            if "departments" in filename:
+            if file_type == "departments":
                 df = pd.DataFrame(columns=["id", "department"])
-            elif "jobs" in filename:
+            elif file_type == "jobs":
                 df = pd.DataFrame(columns=["id", "job"])
-            elif "hired_employees" in filename:
+            elif file_type == "employees":
                 df = pd.DataFrame(columns=["id", "name", "datetime", "department_id", "job_id"])
             else:
-                raise HTTPException(status_code=400, detail="Unrecognized file format")
-
+                raise HTTPException(status_code=400, detail="Unrecognized file type")
         else:
-            # Si no está vacío, procesamos el archivo como de costumbre
-            filename = file.filename.lower()
             df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, dtype=str)
 
-        inserted = 0
-        updated = 0
-        deleted = 0
-
-        if "departments" in filename:
+        if file_type == "departments":
             df.columns = ["id", "department"]
             df["id"] = df["id"].astype(int)
-            existing_departments = {d[0].id: d[0] for d in session.exec(select(Department)).all()}
-            incoming_ids = set(df["id"])
-            existing_ids = set(existing_departments.keys())
-            
-            for _, row in df.iterrows():
-                if row["id"] in existing_departments:
-                    existing_departments[row["id"]].department = row["department"]
-                    updated += 1
-                else:
-                    session.add(Department(id=row["id"], department=row["department"]))
-                    inserted += 1
-            
-            for dep_id in existing_ids - incoming_ids:
-                session.delete(existing_departments[dep_id])
-                deleted += 1
+            return process_data(session, Department, df, "id", "department")
 
-        elif "jobs" in filename:
+        elif file_type == "jobs":
             df.columns = ["id", "job"]
             df["id"] = df["id"].astype(int)
-            existing_jobs = {j[0].id: j[0] for j in session.exec(select(Job)).all()}
-            incoming_ids = set(df["id"])
-            existing_ids = set(existing_jobs.keys())
-            
-            for _, row in df.iterrows():
-                if row["id"] in existing_jobs:
-                    existing_jobs[row["id"].job] = row["job"]
-                    updated += 1
-                else:
-                    session.add(Job(id=row["id"], job=row["job"]))
-                    inserted += 1
-            
-            for job_id in existing_ids - incoming_ids:
-                session.delete(existing_jobs[job_id])
-                deleted += 1
+            return process_data(session, Job, df, "id", "job")
 
-        elif "hired_employees" in filename:
+        elif file_type == "employees":
             df.columns = ["id", "name", "datetime", "department_id", "job_id"]
             df["id"] = df["id"].astype(int)
             df["department_id"] = pd.to_numeric(df["department_id"], errors="coerce")
             df["job_id"] = pd.to_numeric(df["job_id"], errors="coerce")
-            existing_employees = {e[0].id: e[0] for e in session.exec(select(Employee)).all()}
-            incoming_ids = set(df["id"])
-            existing_ids = set(existing_employees.keys())
-            
-            for _, row in df.iterrows():
-                if row["id"] in existing_employees:
-                    emp = existing_employees[row["id"]]
-                    emp.name = row["name"]
-                    emp.datetime = row["datetime"]
-                    emp.department_id = int(row["department_id"]) if not pd.isna(row["department_id"]) else None
-                    emp.job_id = int(row["job_id"]) if not pd.isna(row["job_id"]) else None
-                    updated += 1
-                else:
-                    session.add(
-                        Employee(
-                            id=int(row["id"]),
-                            name=row["name"],
-                            datetime=row["datetime"],
-                            department_id=int(row["department_id"]) if not pd.isna(row["department_id"]) else None,
-                            job_id=int(row["job_id"]) if not pd.isna(row["job_id"]) else None
-                        )
-                    )
-                    inserted += 1
-            
-            for emp_id in existing_ids - incoming_ids:
-                session.delete(existing_employees[emp_id])
-                deleted += 1
+            return process_data(session, Employee, df, "id", "name", "datetime", "department_id", "job_id")
         
         else:
-            raise HTTPException(status_code=400, detail="Unrecognized file format")
-
-        session.commit()
-        return {"message": "Data processed successfully", "inserted": inserted, "updated": updated, "deleted": deleted}
+            raise HTTPException(status_code=400, detail="Unrecognized file type")
     
     except Exception as e:
         session.rollback()
