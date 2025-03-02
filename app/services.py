@@ -5,6 +5,7 @@ from sqlmodel import select, func, case
 from app.models import Department, Job, Employee
 from app.utils import get_model_metadata, process_data
 from app.constants import MODEL_MAP
+import numpy as np
 import logging
 logger = logging.getLogger('uvicorn.error')
 #logger.info('A')
@@ -23,7 +24,10 @@ def process_csv(file, session, file_type):
         if not contents:
             df = pd.DataFrame(columns=columns)
         else:
-            df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, dtype=str)
+            df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None)
+
+            # Reemplazar NaN por None en columnas opcionales (manejar nulidad de claves foraneas)
+            df = df.replace({np.nan: None})
 
         df.columns = columns
 
