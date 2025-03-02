@@ -1,8 +1,13 @@
 import pandas as pd
 import io
 from fastapi import HTTPException
-from sqlmodel import select
+from sqlmodel import select, SQLModel
 from app.models import Department, Job, Employee
+from typing import Type
+
+def get_model_metadata(model: Type[SQLModel]):
+    """ Devuelve los nombres de los atributos del modelo y sus tipos de datos. """
+    return {field_name: field_info.annotation for field_name, field_info in model.model_fields.items()}
 
 def process_data(session, model, df, *columns):
     existing_records = {record.id: record for record in session.exec(select(model)).all()}

@@ -3,7 +3,8 @@ import io
 from fastapi import HTTPException
 from sqlmodel import select, func, case
 from app.models import Department, Job, Employee
-from app.utils import process_data
+from app.utils import get_model_metadata, process_data
+from app.constants import MODEL_MAP
 import logging
 logger = logging.getLogger('uvicorn.error')
 #logger.info('A')
@@ -12,41 +13,30 @@ def process_csv(file, session, file_type):
     try:
         contents = file.file.read()
 
+        if file_type not in MODEL_MAP:
+            raise HTTPException(status_code=400, detail="Unrecognized file type")
+
+        model = MODEL_MAP[file_type]
+        metadata = get_model_metadata(model)
+        columns = list(metadata.keys())
+
         if not contents:
-            if file_type == "departments":
-                df = pd.DataFrame(columns=["id", "department"])
-            elif file_type == "jobs":
-                df = pd.DataFrame(columns=["id", "job"])
-            elif file_type == "employees":
-                df = pd.DataFrame(columns=["id", "name", "datetime", "department_id", "job_id"])
-            else:
-                raise HTTPException(status_code=400, detail="Unrecognized file type")
+            df = pd.DataFrame(columns=columns)
         else:
             df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, dtype=str)
 
-        if file_type == "departments":
-            df.columns = ["id", "department"]
-            df["id"] = df["id"].astype(int)
-            return process_data(session, Department, df, "id", "department")
+        df.columns = columns
 
-        elif file_type == "jobs":
-            df.columns = ["id", "job"]
-            df["id"] = df["id"].astype(int)
-            return process_data(session, Job, df, "id", "job")
+        for col, col_type in metadata.items():
+            if col_type is int:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
-        elif file_type == "employees":
-            df.columns = ["id", "name", "datetime", "department_id", "job_id"]
-            df["id"] = df["id"].astype(int)
-            df["department_id"] = pd.to_numeric(df["department_id"], errors="coerce")
-            df["job_id"] = pd.to_numeric(df["job_id"], errors="coerce")
-            return process_data(session, Employee, df, "id", "name", "datetime", "department_id", "job_id")
-        
-        else:
-            raise HTTPException(status_code=400, detail="Unrecognized file type")
-    
+        return process_data(session, model, df, *columns)
+
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 def employees_per_quarter(session):
     query = (
