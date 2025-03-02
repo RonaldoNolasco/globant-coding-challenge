@@ -24,16 +24,14 @@ def process_csv(file, session, file_type):
         if not contents:
             df = pd.DataFrame(columns=columns)
         else:
-            df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None)
-
-            # Reemplazar NaN por None en columnas opcionales (manejar nulidad de claves foraneas)
-            df = df.replace({np.nan: None})
-
-        df.columns = columns
+            df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, names=columns)
 
         for col, col_type in metadata.items():
             if col_type is int:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
+        
+        # Reemplazar NaN por None en columnas opcionales (manejar nulidad de claves foraneas)
+        df = df.replace({np.nan: None})
 
         return process_data(session, model, df, *columns)
 
