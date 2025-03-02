@@ -1,22 +1,27 @@
-# pull official base image
+# Usa una imagen base ligera de Python
 FROM python:3.11-slim-buster
 
-# set working directory
+# Define el directorio de trabajo dentro del contenedor
 WORKDIR /usr/src/app
 
-# set environment variables
+# Configura variables de entorno para mejorar rendimiento de Python
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# install system dependencies
+# Instala dependencias del sistema
 RUN apt-get update \
-  && apt-get -y install netcat gcc postgresql \
+  && apt-get -y install netcat gcc postgresql-client \
   && apt-get clean
 
-# install python dependencies
-RUN pip install --upgrade pip
-COPY ./requirements.txt .
-RUN pip install -r requirements.txt
+# Copia el archivo de dependencias e instálalas
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# add app
+# Copia todo el código de la app
 COPY . .
+
+# Expone el puerto de la aplicación
+EXPOSE 8000
+
+# Comando por defecto para ejecutar FastAPI
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
