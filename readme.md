@@ -219,6 +219,8 @@ To start creating the images and running the containers:
 
 ![Alt text](img/cloud-deployment/cloud-app-deployments.png)
 
+![Alt text](img/cloud-deployment/cloud-app-variables.png)
+
 ![Alt text](img/cloud-deployment/cloud-app-metrics.png)
 
 ![Alt text](img/cloud-deployment/cloud-app-deployments-details.png)
