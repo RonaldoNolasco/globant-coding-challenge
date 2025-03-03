@@ -15,15 +15,14 @@ This project is a solution developed for Globant's Data Engineering Coding Chall
     - [3. Install dependencies](#3-install-dependencies)
     - [4. Configure environment variables](#4-configure-environment-variables)
     - [5. Run the API](#5-run-the-api)
-  - [Deployment](#deployment)
   - [API Usage](#api-usage)
   - [Section 1: API](#section-1-api)
     - [Available Endpoints](#available-endpoints)
   - [Section 2: SQL](#section-2-sql)
   - [Bonus Track: Cloud, Testing \& Containers](#bonus-track-cloud-testing--containers)
-    - [**Cloud Deployment**](#cloud-deployment)
-    - [**Testing**](#testing)
-    - [**Docker**](#docker)
+    - [Cloud Deployment](#cloud-deployment)
+    - [Testing](#testing)
+    - [Docker](#docker)
   - [Project Images](#project-images)
 
 ## Technologies Used
@@ -92,14 +91,6 @@ DATABASE_URL=sqlite:///db/database.db  # For development and testing
 ```
 The API will be available at `http://localhost:8000`.
 
-## Deployment
-The application is deployed and available at the following link:  
-🔗 [https://globant-coding-challenge-production.up.railway.app/docs](https://globant-coding-challenge-production.up.railway.app/docs)
-
-It is hosted on **Railway.com**, utilizing two containers:  
-- One for the REST API  
-- One for the PostgreSQL database
-
 ## API Usage
 The interactive documentation is available at:
 - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
@@ -118,7 +109,7 @@ The API provides endpoints to receive and process CSV files with employee, depar
 
 Example of a POST request:
 ```bash
- curl -X POST "http://127.0.0.1:8000/upload/employees/" -F "file=@hired_employees.csv"
+ curl -X POST "http://localhost:8000/upload/employees/" -F "file=@hired_employees.csv"
 ```
 
 Example of a GET request:
@@ -130,16 +121,17 @@ Example of a GET request:
 SQL queries have been developed to extract key insights from the database.
 
 1. **Number of employees hired per quarter in 2021**
-2. **Departments that hired more employees than the average**
 
-Expected response example for query 1:
+Expected response:
 ```json
 [
   {"department": "Staff", "job": "Recruiter", "Q1": 3, "Q2": 2, "Q3": 0, "Q4": 0}
 ]
 ```
 
-Expected response example for query 2:
+2. **Departments that hired more employees than the average**
+
+Expected response:
 ```json
 [
   {"id": 1, "department": "Engineering", "hired": 150},
@@ -148,10 +140,17 @@ Expected response example for query 2:
 ```
 
 ## Bonus Track: Cloud, Testing & Containers
-### **Cloud Deployment**
-The application is deployed on **Railway.com**, where the API container runs alongside the PostgreSQL database.
+### Cloud Deployment
+The application is deployed and available at the following link:  
+🔗 [https://globant-coding-challenge-production.up.railway.app](https://globant-coding-challenge-production.up.railway.app)
 
-### **Testing**
+It is hosted on **Railway.com**, a platform that allows you to implement and deploy web applications
+
+Two containers were used, as follows:
+- One for the REST API
+- One for the PostgreSQL database
+
+### Testing
 Automated tests have been implemented using `pytest` to validate API functionality.
 
 Run tests:
@@ -160,11 +159,15 @@ Run tests:
  pytest test/test_crud.py  # CRUD tests
 ```
 
-### **Docker**
-To run the application in a Docker container:
+### Docker
+To run your application in a Docker container, you can use the docker-compose.yml file.
+
+You must ensure that Docker is installed and running.
+
+To start creating the images and running the containers:
 ```bash
- docker build -t my-fastapi-app .
- docker run -p 8000:8000 my-fastapi-app
+ docker-compose down -v # Stop the container if it is running
+ docker-compose up -d --build # Start the containers defined in docker-compose.yml
 ```
 
 ## Project Images
