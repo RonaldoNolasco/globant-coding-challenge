@@ -10,27 +10,42 @@ import logging
 logger = logging.getLogger('uvicorn.error')
 #logger.info('A')
 
+# Funcion generica para leer un archivo CSV y procesar su contenido
 def process_csv(file, session, file_type):
     try:
+        # Se lee el contenido del archivo
         contents = file.file.read()
 
+        # Si no se encuentra dentro de los modelos mapeados, se lanza un error
         if file_type not in MODEL_MAP:
             raise HTTPException(status_code=400, detail="Unrecognized file type")
 
+        # Se obtiene la clase del modelo
         model = MODEL_MAP[file_type]
-        metadata = get_model_metadata(model)
-        columns = list(metadata.keys())
 
+        # Se obtiene la metadata de la clase
+        metadata = get_model_metadata(model)
+
+        # Se obtiene la lista de campos de la clase
+        columns = list(metadata.keys())
+        
+        # Si no tiene contenido, se crea un dataframe vacio
         if not contents:
             df = pd.DataFrame(columns=columns)
+        
+        # Sino, se lee el csv con el formato esperado
         else:
             df = pd.read_csv(io.StringIO(contents.decode("utf-8")), header=None, names=columns)
+        
+        # Se itera por todos las columnas
+        for col, col_type in metadata.items(): 
 
-        for col, col_type in metadata.items():
+            # Aquellos que en el modelo sean int
             if col_type is int:
+                # Se le castea a int, manejando aquellos que son nulos
                 df[col] = pd.to_numeric(df[col], errors="coerce")
         
-        # Reemplazar NaN por None en columnas opcionales (manejar nulidad de claves foraneas)
+        # Reemplazar NaN por None (manejar nulidad de claves foraneas)
         df = df.replace({np.nan: None})
 
         return process_data(session, model, df, *columns)
@@ -41,6 +56,8 @@ def process_csv(file, session, file_type):
 
 
 def employees_per_quarter(session):
+
+    # Se obtienen los empleados del 2021 por trimestre, agrupando por departamento y area, y se ordena por departamento y trabajo
     query = (
         select(
             Department.department, Job.job,
@@ -56,6 +73,7 @@ def employees_per_quarter(session):
         .order_by(Department.department, Job.job)
     )
 
+    # Se ejecuta la consulta
     results = session.exec(query).all()
     
     return [
@@ -96,6 +114,7 @@ def departments_above_mean(session):
         .order_by(func.count(Employee.id).desc())
     )
 
+    # Se ejecuta la consulta
     results = session.exec(query).all()
 
     return [

@@ -4,22 +4,25 @@ from dotenv import load_dotenv
 import logging
 logger = logging.getLogger('uvicorn.error')
 
+# Se cargan las variables de entorno
 load_dotenv()
 
-# Si la variable TESTING está en "true", usar BD en memoria
+# Se obtiene la url de la base de datos
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 # DESA: "sqlite:///db/database.db"
 # CERT: "sqlite:///db/test_database.db"
-# PROD: "postgresql://postgres:TQIZrLVrMCuTjEDVSbYmGsxvmdELdhEI@postgres.railway.internal:5432/railway"
+# PROD: Cadena de conexion generada en railway.com
 
+# Se crea el motor de base de datos
 engine = create_engine(DATABASE_URL, echo=True)
 
+# Se define la funcion de inicializacion de la BD
 def init_db():
-    logger.info(DATABASE_URL)
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
+# Se define la funcion de obtencion de la sesion
 def get_session():
     with Session(engine) as session:
         yield session
