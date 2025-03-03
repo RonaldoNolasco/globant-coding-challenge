@@ -229,6 +229,8 @@ To start creating the images and running the containers:
 
 ![Alt text](img/cloud-deployment/cloud-app-deployments-deploy-logs.png)
 
+![Alt text](img/cloud-deployment/cloud-bd-deployments.png)
+
 ![Alt text](img/cloud-deployment/cloud-bd-data.png)
 
 ---
