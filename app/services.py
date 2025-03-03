@@ -106,7 +106,7 @@ def departments_above_mean(session):
 
     # Consulta principal para seleccionar departamentos con empleados por encima del promedio
     query = (
-        select(Department.id, Department.department, func.count(Employee.id).label("hired_count"))
+        select(Department.id, Department.department, func.count(Employee.id).label("hired"))
         .join(Employee, Employee.department_id == Department.id, isouter=True)
         .where(Employee.datetime.like("2021-%"))
         .group_by(Department.id, Department.department)
@@ -121,7 +121,7 @@ def departments_above_mean(session):
         {
             "id": id,
             "department": department,
-            "hired_count": hired_count
-        } for id, department, hired_count in results
+            "hired": hired
+        } for id, department, hired in results
     ]
 
