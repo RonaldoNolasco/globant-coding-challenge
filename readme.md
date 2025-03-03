@@ -24,6 +24,11 @@ This project is a solution developed for Globant's Data Engineering Coding Chall
     - [Testing](#testing)
     - [Docker](#docker)
   - [Project Images](#project-images)
+    - [Application Interface](#application-interface)
+    - [Local Deployment using CMD](#local-deployment-using-cmd)
+    - [Local Deployment using Docker](#local-deployment-using-docker)
+    - [Testing (17 test passed)](#testing-17-test-passed)
+    - [Cloud Deployment using Docker](#cloud-deployment-using-docker)
 
 ## Technologies Used
 - **Python 3.10.13** (Main programming language)
@@ -171,7 +176,58 @@ To start creating the images and running the containers:
 ```
 
 ## Project Images
-_Add screenshots or diagrams here_
+
+### Application Interface
+
+![Alt text](img/application-interface/all-endpoints.png)
+
+![Alt text](img/application-interface/department-endpoint-details.png)
+
+![Alt text](img/application-interface/department-endpoint-execution.png)
+
+![Alt text](img/application-interface/employees-per-quarter-execution.png)
+
+![Alt text](img/application-interface/departments-above-mean-execution.png)
+
+### Local Deployment using CMD
+
+![Alt text](img/local-deployment-cmd/local-deployment-logs-1.png)
+
+![Alt text](img/local-deployment-cmd/local-deployment-logs-2.png)
+
+### Local Deployment using Docker
+
+![Alt text](img/local-deployment-docker/docker-compose-run.png)
+
+![Alt text](img/local-deployment-docker/docker-containers.png)
+
+![Alt text](img/local-deployment-docker/docker-images.png)
+
+![Alt text](img/local-deployment-docker/docker-volumes.png)
+
+![Alt text](img/local-deployment-docker/docker-builds.png)
+
+![Alt text](img/local-deployment-docker/docker-db-logs.png)
+
+![Alt text](img/local-deployment-docker/docker-app-logs.png)
+
+### Testing (17 test passed)
+
+![Alt text](img/testing/all-test-passed.png)
+
+### Cloud Deployment using Docker
+
+![Alt text](img/cloud-deployment/cloud-app-deployments.png)
+
+![Alt text](img/cloud-deployment/cloud-app-metrics.png)
+
+![Alt text](img/cloud-deployment/cloud-app-deployments-details.png)
+
+![Alt text](img/cloud-deployment/cloud-app-deployments-build-logs.png)
+
+![Alt text](img/cloud-deployment/cloud-app-deployments-deploy-logs.png)
+
+![Alt text](img/cloud-deployment/cloud-bd-data.png)
 
 ---
 This project was developed following best practices, including modularity, testing, and cloud deployment.
