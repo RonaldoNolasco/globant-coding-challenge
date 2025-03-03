@@ -72,8 +72,8 @@ This project is a solution developed for Globant's Data Engineering Coding Chall
 ## Installation and Configuration
 ### 1. Clone the repository
 ```bash
- git clone https://github.com/your-user/repository-name.git
- cd repository-name
+ git clone https://github.com/RonaldoNolasco/globant-coding-challenge.git
+ cd globant-coding-challenge
 ```
 ### 2. Create and activate a virtual environment
 ```bash
