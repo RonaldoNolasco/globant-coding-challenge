@@ -15,6 +15,7 @@ This project is a solution developed for Globant's Data Engineering Coding Chall
     - [3. Install dependencies](#3-install-dependencies)
     - [4. Configure environment variables](#4-configure-environment-variables)
     - [5. Run the API](#5-run-the-api)
+  - [Deployment](#deployment)
   - [API Usage](#api-usage)
   - [Section 1: API](#section-1-api)
     - [Available Endpoints](#available-endpoints)
@@ -90,6 +91,14 @@ DATABASE_URL=sqlite:///db/database.db  # For development and testing
  python -m fastapi dev app/main.py
 ```
 The API will be available at `http://localhost:8000`.
+
+## Deployment
+The application is deployed and available at the following link:  
+🔗 [https://globant-coding-challenge-production.up.railway.app/docs](https://globant-coding-challenge-production.up.railway.app/docs)
+
+It is hosted on **Railway.com**, utilizing two containers:  
+- One for the REST API  
+- One for the PostgreSQL database
 
 ## API Usage
 The interactive documentation is available at:
