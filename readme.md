@@ -8,11 +8,10 @@ Este proyecto es una solución desarrollada para el Data Engineering Coding Chal
   - [Descripción](#descripción)
   - [Contenido](#contenido)
   - [Tecnologías Utilizadas](#tecnologías-utilizadas)
-  - [Arquitectura](#arquitectura)
   - [Estructura del Proyecto](#estructura-del-proyecto)
   - [Instalación y Configuración](#instalación-y-configuración)
     - [1. Clonar el repositorio](#1-clonar-el-repositorio)
-    - [2. Crear y activar un entorno virtual (opcional)](#2-crear-y-activar-un-entorno-virtual-opcional)
+    - [2. Crear y activar un entorno virtual](#2-crear-y-activar-un-entorno-virtual)
     - [3. Instalar dependencias](#3-instalar-dependencias)
     - [4. Configurar variables de entorno](#4-configurar-variables-de-entorno)
     - [5. Ejecutar la API](#5-ejecutar-la-api)
@@ -27,26 +26,14 @@ Este proyecto es una solución desarrollada para el Data Engineering Coding Chal
   - [Imágenes del Proyecto](#imágenes-del-proyecto)
 
 ## Tecnologías Utilizadas
-- **Python 3.9**
+- **Python 3.10.13** (Lenguaje de programacion principal)
 - **FastAPI** (Framework para la API REST)
 - **SQLModel** (ORM para interacción con la base de datos)
-- **SQLite** (Base de datos utilizada para pruebas)
+- **SQLite** (Base de datos utilizada para desarrollo y pruebas)
 - **PostgreSQL** (Base de datos utilizada en producción)
 - **Docker** (Containerización)
 - **Pytest** (Testing automatizado)
 - **Railway.com** (Plataforma de despliegue en la nube)
-
-## Arquitectura
-El proyecto está compuesto por los siguientes módulos principales:
-- **`app/main.py`**: Punto de entrada de la API.
-- **`app/routes.py`**: Define las rutas de la API.
-- **`app/database.py`**: Configura la conexión a la base de datos.
-- **`app/models.py`**: Define los modelos de la base de datos.
-- **`app/services.py`**: Contiene la lógica para procesar los datos.
-- **`app/utils.py`**: Funciones auxiliares para el procesamiento de datos.
-- **`app/middleware.py`**: Manejo de redirecciones y errores.
-- **`Dockerfile`**: Configuración para la containerización.
-- **`tests/`**: Contiene los archivos de pruebas automatizadas.
 
 ## Estructura del Proyecto
 ```plaintext
@@ -58,10 +45,22 @@ El proyecto está compuesto por los siguientes módulos principales:
 │   ├── services.py    # Lógica de negocio
 │   ├── utils.py       # Funciones auxiliares
 │   ├── middleware.py  # Manejo de errores
+│   ├── constants.py   # Constantes del proyecto
+├── data/              # Carpeta de datos de entrada
+│   ├── departments/   # Datos de los departamentos
+│   ├── employees/     # Datos de los empleados
+│   ├── jobs/          # Datos de los trabajos
 ├── tests/             # Pruebas automatizadas
+│   ├── config.py      # Configuracion para las pruebas
+│   ├── test_api.py    # Pruebas a los endpoints de la API
+│   ├── test_crud.py   # Pruebas al CRUD de las entidades
 ├── Dockerfile         # Configuración del contenedor
+├── docker-compose.yml # Configuración de Docker Compose
 ├── requirements.txt   # Dependencias del proyecto
 ├── .env               # Variables de entorno
+├── .env.test          # Variables de entorno para pruebas
+├── .gitignore         # Archivos ignorados en el repositorio
+├── pytest.ini         # Configuración de pytest
 ├── README.md          # Documentación
 ```
 
@@ -71,30 +70,30 @@ El proyecto está compuesto por los siguientes módulos principales:
  git clone https://github.com/tu-usuario/nombre-repositorio.git
  cd nombre-repositorio
 ```
-### 2. Crear y activar un entorno virtual (opcional)
+### 2. Crear y activar un entorno virtual
 ```bash
- python -m venv venv
- source venv/bin/activate  # En Windows: venv\Scripts\activate
+ python -m venv .venv
+ source .venv\Scripts\activate  # En Linux/Mac: source .venv/bin/activate
 ```
 ### 3. Instalar dependencias
 ```bash
- pip install -r requirements.txt
+ python -m pip install -r requirements.txt
 ```
 ### 4. Configurar variables de entorno
 Crear un archivo `.env` y definir la variable `DATABASE_URL`:
 ```env
-DATABASE_URL=sqlite:///db/database.db  # Para pruebas locales
+DATABASE_URL=sqlite:///db/database.db  # Para desarrollo y pruebas
 # DATABASE_URL=postgresql://user:password@host:port/dbname  # Para producción
 ```
 ### 5. Ejecutar la API
 ```bash
- uvicorn app.main:app --reload
+ python -m fastapi dev app/main.py
 ```
-La API estará disponible en `http://127.0.0.1:8000`.
+La API estará disponible en `http://localhost:8000`.
 
 ## Uso de la API
 La documentación interactiva se puede acceder en:
-- Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## Sección 1: API
 La API proporciona endpoints para recibir y procesar archivos CSV con datos de empleados, departamentos y trabajos.
@@ -108,9 +107,15 @@ La API proporciona endpoints para recibir y procesar archivos CSV con datos de e
   - `GET /employees_per_quarter/` (Empleados contratados por trimestre en 2021)
   - `GET /departments_above_mean/` (Departamentos con contrataciones por encima de la media en 2021)
 
-Ejemplo de petición:
+
+Ejemplo de petición POST:
 ```bash
  curl -X POST "http://127.0.0.1:8000/upload/employees/" -F "file=@hired_employees.csv"
+```
+
+Ejemplo de petición GET:
+```bash
+ curl -X GET "http://localhost:8000/employees_per_quarter/"
 ```
 
 ## Sección 2: SQL
@@ -129,8 +134,8 @@ Ejemplo de respuesta esperada para la consulta 1:
 Ejemplo de respuesta esperada para la consulta 2:
 ```json
 [
-  {"department": "Engineering", "total_hired": 150},
-  {"department": "Marketing", "total_hired": 90}
+  {"id": 1, "department": "Engineering", "hired": 150},
+  {"id": 2, "department": "Marketing", "hired": 90}
 ]
 ```
 
@@ -143,7 +148,8 @@ Se han implementado tests automáticos con `pytest` para validar la funcionalida
 
 Ejecutar tests:
 ```bash
- pytest
+ pytest test/test_api.py  # Para pruebas de API
+ pytest test/test_crud.py  # Para pruebas de CRUD
 ```
 
 ### **Docker**
